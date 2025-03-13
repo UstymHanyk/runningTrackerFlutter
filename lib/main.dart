@@ -39,7 +39,7 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   double _distance = 0;
   final TextEditingController _controller = TextEditingController();
-  List<Map<String, dynamic>> _runs = [];
+  final List<Map<String, dynamic>> _runs = [];
 
   void _handleInput() {
     String input = _controller.text.trim();
@@ -61,11 +61,6 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
-  void _clearList() {
-    setState(() {
-      _runs.clear();
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
