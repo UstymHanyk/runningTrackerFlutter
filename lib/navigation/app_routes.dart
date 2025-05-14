@@ -3,5 +3,4 @@ class AppRoutes {
   static const String register = '/register';
   static const String profile = '/profile';
   static const String main = '/main';
-  // Add any new routes here
 } 
