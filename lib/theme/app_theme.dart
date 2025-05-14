@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:my_project/theme/app_colors.dart';
 
+/// Application theme configuration
 class AppTheme {
+  /// Creates the default dark theme for the app
   static ThemeData get darkTheme {
     return ThemeData(
       brightness: Brightness.dark,
@@ -9,12 +11,10 @@ class AppTheme {
         primary: AppColors.primary,
         secondary: AppColors.secondary,
         surface: AppColors.surfacePrimary,
-        background: AppColors.background,
         error: AppColors.error,
         onPrimary: AppColors.textPrimary,
         onSecondary: Colors.black,
         onSurface: AppColors.textPrimary,
-        onBackground: AppColors.textPrimary,
         onError: AppColors.textPrimary,
         brightness: Brightness.dark,
       ),
@@ -28,7 +28,7 @@ class AppTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         labelStyle: TextStyle(color: AppColors.textSecondary),
-        hintStyle: TextStyle(color: AppColors.textSecondary.withOpacity(0.7)),
+        hintStyle: TextStyle(color: AppColors.textSecondary.withAlpha(179)),
         border: OutlineInputBorder(
            borderRadius: const BorderRadius.all(Radius.circular(8.0)),
            borderSide: BorderSide(color: AppColors.textSecondary),

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:my_project/models/run.dart';
 import 'package:my_project/repositories/interfaces/run_repository_interface.dart';
 import 'package:my_project/repositories/run_repository.dart';
-import 'package:my_project/services/auth_provider.dart';
 import 'package:my_project/services/interfaces/run_provider_interface.dart';
 import 'dart:math';
 

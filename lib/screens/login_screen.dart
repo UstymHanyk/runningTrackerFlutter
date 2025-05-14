@@ -104,7 +104,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               _passwordController.text,
                             );
                             
-                            if (success && mounted) {
+                            if (context.mounted && success) {
                               Navigator.pushReplacementNamed(context, AppRoutes.main);
                             }
                           }

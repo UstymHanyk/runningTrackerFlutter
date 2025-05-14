@@ -153,7 +153,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                           _nameController.text.trim(),
                                         );
                                         
-                                        if (success && mounted) {
+                                        if (context.mounted && success) {
                                           setState(() {
                                             _isEditing = false;
                                           });

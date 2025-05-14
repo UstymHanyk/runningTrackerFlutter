@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:my_project/main.dart';
 import 'package:my_project/navigation/app_routes.dart';
 import 'package:my_project/services/interfaces/auth_provider_interface.dart';
 import 'package:my_project/services/interfaces/run_provider_interface.dart';

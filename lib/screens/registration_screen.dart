@@ -142,7 +142,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                               _nameController.text.trim(),
                             );
                             
-                            if (success && mounted) {
+                            if (context.mounted && success) {
                               Navigator.pushNamedAndRemoveUntil(
                                 context,
                                 AppRoutes.main,
