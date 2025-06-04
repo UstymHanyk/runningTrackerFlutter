@@ -143,7 +143,7 @@ class AuthProvider extends ChangeNotifier implements AuthProviderInterface {
         );
         
         // Show connectivity warning if offline
-        if (_connectivityService != null && !_connectivityService!.isConnected) {
+        if (_connectivityService != null && !_connectivityService.isConnected) {
           _error = 'No internet connection - Limited functionality';
         }
       } else {
@@ -198,7 +198,7 @@ class AuthProvider extends ChangeNotifier implements AuthProviderInterface {
         );
         
         // Show connectivity warning if offline
-        if (_connectivityService != null && !_connectivityService!.isConnected) {
+        if (_connectivityService != null && !_connectivityService.isConnected) {
           _error = 'No internet connection - Limited functionality';
         }
         
