@@ -3,4 +3,5 @@ class AppRoutes {
   static const String register = '/register';
   static const String profile = '/profile';
   static const String main = '/main';
+  static const String heartRateDashboard = '/heart_rate_dashboard';
 } 

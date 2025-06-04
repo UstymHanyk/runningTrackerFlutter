@@ -37,6 +37,15 @@ dependencies:
   shared_preferences: ^2.2.2
   equatable: ^2.0.5
   provider: ^6.1.1
+  
+  # MQTT client for IoT connectivity
+  mqtt_client: ^10.2.0
+  
+  # Connectivity checking
+  connectivity_plus: ^6.0.5
+  
+  # Secure storage for tokens and sensitive data
+  flutter_secure_storage: ^9.2.2
 
 dev_dependencies:
   flutter_test:
