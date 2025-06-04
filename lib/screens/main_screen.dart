@@ -86,6 +86,16 @@ class _MainScreenState extends State<MainScreen> {
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontSize: 48, fontWeight: FontWeight.bold),
                 ),
+                // Display Live Heart Rate if available and run is active
+                if (runProvider.currentDistance > 0 && runProvider.currentHeartRate != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8.0),
+                    child: Text(
+                      '${runProvider.currentHeartRate} bpm',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: AppColors.accent),
+                    ),
+                  ),
                 const SizedBox(height: 20),
                 TextField(
                   controller: _runNameController,
@@ -145,13 +155,9 @@ class _MainScreenState extends State<MainScreen> {
                                 final run = runProvider.runs[index];
                                 return RunListItem(
                                    key: ValueKey(run.id),
-                                   runData: {
-                                     'name': run.name,
-                                     'distance': run.distance,
-                                   },
+                                   runObject: run,
                                    index: index,
                                    onDelete: () => runProvider.deleteRun(run.id),
-                                   runId: run.id,
                                 );
                               },
                             ),

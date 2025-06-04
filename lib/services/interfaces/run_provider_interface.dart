@@ -6,6 +6,7 @@ abstract class RunProviderInterface extends ChangeNotifier {
   bool get isLoading;
   String? get error;
   double get currentDistance;
+  int? get currentHeartRate;
 
   Future<void> checkUserAndReload(String? currentUserEmail);
   Future<void> loadRuns();

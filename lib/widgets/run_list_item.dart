@@ -1,20 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:my_project/models/run.dart';
-import 'package:my_project/services/run_provider.dart';
+import 'package:my_project/services/interfaces/run_provider_interface.dart';
 import 'package:provider/provider.dart';
 
 class RunListItem extends StatefulWidget {
-  final Map<String, dynamic> runData;
+  final Run runObject;
   final int index;
   final VoidCallback onDelete;
-  final String runId;
 
   const RunListItem({
     super.key,
-    required this.runData,
+    required this.runObject,
     required this.index,
     required this.onDelete,
-    required this.runId,
   });
 
   @override
@@ -28,10 +26,7 @@ class _RunListItemState extends State<RunListItem> {
   @override
   void initState() {
     super.initState();
-    final String runName = widget.runData['name']?.isNotEmpty ?? false 
-        ? widget.runData['name'] 
-        : 'Unnamed Run';
-    _nameController = TextEditingController(text: runName);
+    _nameController = TextEditingController(text: widget.runObject.name);
   }
 
   @override
@@ -48,10 +43,7 @@ class _RunListItemState extends State<RunListItem> {
 
   void _cancelEditing() {
     setState(() {
-      final String runName = widget.runData['name']?.isNotEmpty ?? false 
-          ? widget.runData['name'] 
-          : 'Unnamed Run';
-      _nameController.text = runName;
+      _nameController.text = widget.runObject.name;
       _isEditing = false;
     });
   }
@@ -59,32 +51,40 @@ class _RunListItemState extends State<RunListItem> {
   void _saveEdit() {
     final newName = _nameController.text.trim();
     if (newName.isEmpty) {
-      _nameController.text = 'Unnamed Run';
+      _nameController.text = widget.runObject.name;
+      setState(() {
+        _isEditing = false;
+      });
       return;
     }
 
-    setState(() {
-      _isEditing = false;
-    });
-
-    final runProvider = Provider.of<RunProvider>(context, listen: false);
-    final runToUpdate = runProvider.runs.firstWhere(
-      (run) => run.id == widget.runId,
-      orElse: () => Run(
-        id: widget.runId,
-        name: _nameController.text,
-        distance: widget.runData['distance'] ?? 0.0,
-        date: DateTime.now(),
-      ),
-    );
+    final runProvider = Provider.of<RunProviderInterface>(context, listen: false);
+    final updatedRun = widget.runObject.copyWith(name: newName);
     
-    final updatedRun = runToUpdate.copyWith(name: newName);
-    runProvider.updateRun(updatedRun);
+    runProvider.updateRun(updatedRun).then((success) {
+      if (success) {
+        setState(() {
+          _isEditing = false;
+        });
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to update run name')),
+        );
+        _nameController.text = widget.runObject.name;
+        setState(() {
+            _isEditing = false;
+        });
+      }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    final double runDistance = widget.runData['distance'] ?? 0.0;
+    String heartRateSummary = 'No HR data';
+    if (widget.runObject.heartRateData.isNotEmpty) {
+      double avgHr = widget.runObject.heartRateData.reduce((a, b) => a + b) / widget.runObject.heartRateData.length;
+      heartRateSummary = 'Avg HR: ${avgHr.toStringAsFixed(0)} bpm';
+    }
 
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 4.0),
@@ -109,11 +109,21 @@ class _RunListItemState extends State<RunListItem> {
                   onSubmitted: (_) => _saveEdit(),
                 )
               : Text(
-                  _nameController.text,
+                  widget.runObject.name,
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
-            subtitle: Text(
-              '${runDistance.toStringAsFixed(1)} km',
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${widget.runObject.distance.toStringAsFixed(1)} km',
+                ),
+                if (widget.runObject.heartRateData.isNotEmpty)
+                  Text(
+                    heartRateSummary,
+                    style: TextStyle(fontSize: 12, color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha:0.8)),
+                  ),
+              ],
             ),
             trailing: _isEditing
               ? SizedBox(

@@ -1,85 +1,104 @@
 import 'dart:convert';
+import 'dart:math';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:my_project/models/run.dart';
 import 'package:my_project/repositories/interfaces/run_repository_interface.dart';
-import 'package:my_project/repositories/user_repository.dart';
 
 class RunRepository implements RunRepositoryInterface {
   static const String _baseRunsKey = 'runs';
-  final UserRepository _userRepository = UserRepository();
   
-  Future<String> _getUserRunsKey() async {
-    final currentUser = await _userRepository.getCurrentUser();
-    final String userEmail = currentUser?.email ?? 'guest';
-    return '${_baseRunsKey}_${userEmail.replaceAll('.', '_').replaceAll('@', '_')}';
+  String _generateUserRunsKey(String? userEmail) {
+    final String effectiveEmail = userEmail ?? 'guest';
+    return '${_baseRunsKey}_${effectiveEmail.replaceAll('.', '_').replaceAll('@', '_')}';
   }
   
   @override
-  Future<List<Run>> getAllRuns() async {
+  Future<List<Run>> getAllRuns({required String? userEmail}) async {
     final prefs = await SharedPreferences.getInstance();
-    final String runsKey = await _getUserRunsKey();
+    final String runsKey = _generateUserRunsKey(userEmail);
     final runsJson = prefs.getString(runsKey) ?? '{}';
-    final Map<String, dynamic> runs = json.decode(runsJson);
+    final Map<String, dynamic> runsMap = json.decode(runsJson);
     
-    return runs.values
-        .map((runJson) => Run.fromJson(runJson))
+    return runsMap.values
+        .map((runJson) => Run.fromJson(runJson as Map<String, dynamic>))
         .toList()
-        .cast<Run>()
       ..sort((a, b) => b.date.compareTo(a.date));
   }
   
   @override
-  Future<bool> addRun(Run run) async {
+  Future<bool> addRun({required Run run, required String? userEmail}) async {
     final prefs = await SharedPreferences.getInstance();
-    final String runsKey = await _getUserRunsKey();
+    final String runsKey = _generateUserRunsKey(userEmail);
     final runsJson = prefs.getString(runsKey) ?? '{}';
-    final Map<String, dynamic> runs = json.decode(runsJson);
+    final Map<String, dynamic> runsMap = json.decode(runsJson);
+
+    Run runToAdd = run;
+    if (run.heartRateData.isEmpty) {
+      final random = Random();
+      final int dataPoints = 20 + random.nextInt(11);
+      final List<int> randomHeartRateData = List.generate(
+        dataPoints, 
+        (_) => 70 + random.nextInt(101)
+      );
+      runToAdd = run.copyWith(heartRateData: randomHeartRateData);
+    }
     
-    runs[run.id] = run.toJson();
-    return prefs.setString(runsKey, json.encode(runs));
+    runsMap[runToAdd.id] = runToAdd.toJson();
+    return prefs.setString(runsKey, json.encode(runsMap));
   }
   
   @override
-  Future<bool> updateRun(Run run) async {
+  Future<bool> updateRun({required Run run, required String? userEmail}) async {
     final prefs = await SharedPreferences.getInstance();
-    final String runsKey = await _getUserRunsKey();
+    final String runsKey = _generateUserRunsKey(userEmail);
     final runsJson = prefs.getString(runsKey) ?? '{}';
-    final Map<String, dynamic> runs = json.decode(runsJson);
+    final Map<String, dynamic> runsMap = json.decode(runsJson);
     
-    if (!runs.containsKey(run.id)) {
+    if (!runsMap.containsKey(run.id)) {
       return false;
     }
     
-    runs[run.id] = run.toJson();
-    return prefs.setString(runsKey, json.encode(runs));
+    Run runToUpdate = run;
+    if (run.heartRateData.isEmpty) {
+        final existingRunData = runsMap[run.id];
+        if (existingRunData != null && (existingRunData as Map).containsKey('heartRateData') && existingRunData['heartRateData'] != null) {
+            final existingHeartRateData = List<int>.from(existingRunData['heartRateData'] as List);
+            if (existingHeartRateData.isNotEmpty) {
+                 runToUpdate = run.copyWith(heartRateData: existingHeartRateData);
+            }
+        }
+    }
+
+    runsMap[runToUpdate.id] = runToUpdate.toJson();
+    return prefs.setString(runsKey, json.encode(runsMap));
   }
   
   @override
-  Future<bool> deleteRun(String id) async {
+  Future<bool> deleteRun({required String id, required String? userEmail}) async {
     final prefs = await SharedPreferences.getInstance();
-    final String runsKey = await _getUserRunsKey();
+    final String runsKey = _generateUserRunsKey(userEmail);
     final runsJson = prefs.getString(runsKey) ?? '{}';
-    final Map<String, dynamic> runs = json.decode(runsJson);
+    final Map<String, dynamic> runsMap = json.decode(runsJson);
     
-    if (!runs.containsKey(id)) {
+    if (!runsMap.containsKey(id)) {
       return false;
     }
     
-    runs.remove(id);
-    return prefs.setString(runsKey, json.encode(runs));
+    runsMap.remove(id);
+    return prefs.setString(runsKey, json.encode(runsMap));
   }
   
   @override
-  Future<Run?> getRunById(String id) async {
+  Future<Run?> getRunById({required String id, required String? userEmail}) async {
     final prefs = await SharedPreferences.getInstance();
-    final String runsKey = await _getUserRunsKey();
+    final String runsKey = _generateUserRunsKey(userEmail);
     final runsJson = prefs.getString(runsKey) ?? '{}';
-    final Map<String, dynamic> runs = json.decode(runsJson);
+    final Map<String, dynamic> runsMap = json.decode(runsJson);
     
-    if (!runs.containsKey(id)) {
+    if (!runsMap.containsKey(id)) {
       return null;
     }
     
-    return Run.fromJson(runs[id]);
+    return Run.fromJson(runsMap[id] as Map<String, dynamic>);
   }
 } 
