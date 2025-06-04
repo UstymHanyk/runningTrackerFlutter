@@ -121,7 +121,7 @@ class _RunListItemState extends State<RunListItem> {
                 if (widget.runObject.heartRateData.isNotEmpty)
                   Text(
                     heartRateSummary,
-                    style: TextStyle(fontSize: 12, color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha:0.8)),
+                    style: TextStyle(fontSize: 12, color: Theme.of(context).textTheme.bodySmall?.color?.withAlpha((255 * 0.8).round())),
                   ),
               ],
             ),
