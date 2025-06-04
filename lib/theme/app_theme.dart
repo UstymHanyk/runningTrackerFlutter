@@ -51,25 +51,25 @@ class AppTheme {
         ),
       ),
       elevatedButtonTheme: const ElevatedButtonThemeData(
-        style: const ButtonStyle(
-          backgroundColor: const WidgetStatePropertyAll<Color>(AppColors.primary),
-          foregroundColor: const WidgetStatePropertyAll<Color>(AppColors.textPrimary),
-          padding: const WidgetStatePropertyAll<EdgeInsets>(
+        style: ButtonStyle(
+          backgroundColor: WidgetStatePropertyAll<Color>(AppColors.primary),
+          foregroundColor: WidgetStatePropertyAll<Color>(AppColors.textPrimary),
+          padding: WidgetStatePropertyAll<EdgeInsets>(
             EdgeInsets.symmetric(horizontal: 30, vertical: 15)
           ),
-          textStyle: const WidgetStatePropertyAll<TextStyle>(
+          textStyle: WidgetStatePropertyAll<TextStyle>(
             TextStyle(fontSize: 16, fontWeight: FontWeight.bold)
           ),
-          shape: const WidgetStatePropertyAll<RoundedRectangleBorder>(
+          shape: WidgetStatePropertyAll<RoundedRectangleBorder>(
             RoundedRectangleBorder(
               borderRadius: BorderRadius.all(Radius.circular(8)),
             ),
           ),
         ),
       ),
-      textButtonTheme: TextButtonThemeData(
+      textButtonTheme: const TextButtonThemeData(
         style: ButtonStyle(
-          foregroundColor: const WidgetStatePropertyAll<Color>(AppColors.secondary),
+          foregroundColor: WidgetStatePropertyAll<Color>(AppColors.secondary),
         ),
       ),
       appBarTheme: const AppBarTheme(
