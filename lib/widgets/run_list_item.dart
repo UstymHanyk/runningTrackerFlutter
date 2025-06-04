@@ -62,6 +62,8 @@ class _RunListItemState extends State<RunListItem> {
     final updatedRun = widget.runObject.copyWith(name: newName);
     
     runProvider.updateRun(updatedRun).then((success) {
+      if (!mounted) return;
+
       if (success) {
         setState(() {
           _isEditing = false;

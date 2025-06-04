@@ -16,7 +16,7 @@ class RunProvider extends ChangeNotifier implements RunProviderInterface {
 
   // Heart rate simulation state
   int? _currentHeartRate;
-  List<int> _currentRunHeartRateData = [];
+  final List<int> _currentRunHeartRateData = [];
   Timer? _heartRateTimer;
   final Random _random = Random(); // For heart rate generation
 
