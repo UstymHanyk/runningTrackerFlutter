@@ -5,6 +5,7 @@ import 'package:my_project/screens/main_screen.dart';
 import 'package:my_project/screens/profile_screen.dart';
 import 'package:my_project/screens/registration_screen.dart';
 import 'package:my_project/screens/heart_rate_dashboard_screen.dart';
+import 'package:my_project/screens/microcontroller_screen.dart';
 
 class RouteGenerator {
   static Route<dynamic> generateRoute(RouteSettings settings) {
@@ -19,6 +20,8 @@ class RouteGenerator {
         return MaterialPageRoute(builder: (_) => const MainScreen());
       case AppRoutes.heartRateDashboard:
         return MaterialPageRoute(builder: (_) => const HeartRateDashboardScreen());
+      case AppRoutes.microcontroller:
+        return MaterialPageRoute(builder: (_) => const MicrocontrollerScreen());
       default:
         return _errorRoute(settings.name);
     }

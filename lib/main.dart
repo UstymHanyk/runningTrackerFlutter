@@ -8,6 +8,7 @@ import 'package:my_project/services/interfaces/auth_provider_interface.dart';
 import 'package:my_project/services/interfaces/run_provider_interface.dart';
 import 'package:my_project/services/run_provider.dart';
 import 'package:my_project/services/connectivity_service.dart';
+import 'package:my_project/services/microcontroller_service.dart';
 
 void main() {
   runApp(
@@ -27,6 +28,7 @@ void main() {
           },
         ),
         ChangeNotifierProvider<RunProviderInterface>(create: (_) => RunProvider()),
+        ChangeNotifierProvider<MicrocontrollerService>(create: (_) => MicrocontrollerService()),
       ],
       child: const MyApp(),
     ),

@@ -134,6 +134,13 @@ class _MainScreenState extends State<MainScreen> {
             },
           ),
           IconButton(
+            icon: const Icon(Icons.settings_input_antenna),
+            tooltip: 'Device Configuration',
+            onPressed: () {
+              Navigator.pushNamed(context, AppRoutes.microcontroller);
+            },
+          ),
+          IconButton(
             icon: const Icon(Icons.person),
             tooltip: 'Profile',
             onPressed: () {
