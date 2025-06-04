@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:my_project/theme/app_colors.dart';
 
 /// Application theme configuration
 class AppTheme {
   /// Creates the default dark theme for the app
   static ThemeData get darkTheme {
-    return ThemeData(
+    return const ThemeData(
       brightness: Brightness.dark,
-      colorScheme: const ColorScheme.dark(
+      colorScheme: ColorScheme.dark(
         primary: AppColors.primary,
         secondary: AppColors.secondary,
         surface: AppColors.surfacePrimary,
@@ -19,14 +20,14 @@ class AppTheme {
         brightness: Brightness.dark,
       ),
       scaffoldBackgroundColor: AppColors.background,
-      textTheme: const TextTheme(
+      textTheme: TextTheme(
         bodyLarge: TextStyle(color: AppColors.textPrimary, fontSize: 16.0),
         bodyMedium: TextStyle(color: AppColors.textSecondary, fontSize: 14.0),
         headlineMedium: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 24.0),
         labelLarge: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 16.0),
         titleMedium: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold),
       ),
-      inputDecorationTheme: const InputDecorationTheme(
+      inputDecorationTheme: InputDecorationTheme(
         labelStyle: TextStyle(color: AppColors.textSecondary),
         hintStyle: TextStyle(color: AppColors.textSecondary),
         border: OutlineInputBorder(
@@ -52,15 +53,15 @@ class AppTheme {
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ButtonStyle(
-          backgroundColor: const MaterialStatePropertyAll<Color>(AppColors.primary),
-          foregroundColor: const MaterialStatePropertyAll<Color>(AppColors.textPrimary),
-          padding: const MaterialStatePropertyAll<EdgeInsets>(
+          backgroundColor: WidgetStatePropertyAll<Color>(AppColors.primary),
+          foregroundColor: WidgetStatePropertyAll<Color>(AppColors.textPrimary),
+          padding: WidgetStatePropertyAll<EdgeInsets>(
             EdgeInsets.symmetric(horizontal: 30, vertical: 15)
           ),
-          textStyle: const MaterialStatePropertyAll<TextStyle>(
+          textStyle: WidgetStatePropertyAll<TextStyle>(
             TextStyle(fontSize: 16, fontWeight: FontWeight.bold)
           ),
-          shape: const MaterialStatePropertyAll<RoundedRectangleBorder>(
+          shape: WidgetStatePropertyAll<RoundedRectangleBorder>(
             RoundedRectangleBorder(
               borderRadius: BorderRadius.all(Radius.circular(8)),
             ),
@@ -69,10 +70,10 @@ class AppTheme {
       ),
       textButtonTheme: TextButtonThemeData(
         style: ButtonStyle(
-          foregroundColor: const MaterialStatePropertyAll<Color>(AppColors.secondary),
+          foregroundColor: WidgetStatePropertyAll<Color>(AppColors.secondary),
         ),
       ),
-      appBarTheme: const AppBarTheme(
+      appBarTheme: AppBarTheme(
         backgroundColor: AppColors.background,
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
@@ -83,7 +84,7 @@ class AppTheme {
           color: AppColors.textPrimary,
         )
       ),
-      cardTheme: const CardTheme(
+      cardTheme: CardTheme(
         elevation: 2,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.all(Radius.circular(12))
@@ -91,10 +92,10 @@ class AppTheme {
         color: AppColors.surfacePrimary,
         margin: EdgeInsets.symmetric(vertical: 6.0, horizontal: 4.0),
       ),
-      iconTheme: const IconThemeData(
+      iconTheme: IconThemeData(
         color: AppColors.textSecondary,
       ),
-      floatingActionButtonTheme: const FloatingActionButtonThemeData(
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
         backgroundColor: AppColors.accent,
         foregroundColor: Colors.black,
         elevation: 4.0,
