@@ -7,7 +7,7 @@ class AppTheme {
   static ThemeData get darkTheme {
     return ThemeData(
       brightness: Brightness.dark,
-      colorScheme: ColorScheme.dark(
+      colorScheme: const ColorScheme.dark(
         primary: AppColors.primary,
         secondary: AppColors.secondary,
         surface: AppColors.surfacePrimary,
@@ -19,14 +19,14 @@ class AppTheme {
         brightness: Brightness.dark,
       ),
       scaffoldBackgroundColor: AppColors.background,
-      textTheme: TextTheme(
+      textTheme: const TextTheme(
         bodyLarge: TextStyle(color: AppColors.textPrimary, fontSize: 16.0),
         bodyMedium: TextStyle(color: AppColors.textSecondary, fontSize: 14.0),
         headlineMedium: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 24.0),
         labelLarge: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 16.0),
         titleMedium: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold),
       ),
-      inputDecorationTheme: InputDecorationTheme(
+      inputDecorationTheme: const InputDecorationTheme(
         labelStyle: TextStyle(color: AppColors.textSecondary),
         hintStyle: TextStyle(color: AppColors.textSecondary),
         border: OutlineInputBorder(
@@ -50,17 +50,17 @@ class AppTheme {
           borderRadius: BorderRadius.all(Radius.circular(8.0)),
         ),
       ),
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ButtonStyle(
-          backgroundColor: WidgetStatePropertyAll<Color>(AppColors.primary),
-          foregroundColor: WidgetStatePropertyAll<Color>(AppColors.textPrimary),
-          padding: WidgetStatePropertyAll<EdgeInsets>(
+      elevatedButtonTheme: const ElevatedButtonThemeData(
+        style: const ButtonStyle(
+          backgroundColor: const WidgetStatePropertyAll<Color>(AppColors.primary),
+          foregroundColor: const WidgetStatePropertyAll<Color>(AppColors.textPrimary),
+          padding: const WidgetStatePropertyAll<EdgeInsets>(
             EdgeInsets.symmetric(horizontal: 30, vertical: 15)
           ),
-          textStyle: WidgetStatePropertyAll<TextStyle>(
+          textStyle: const WidgetStatePropertyAll<TextStyle>(
             TextStyle(fontSize: 16, fontWeight: FontWeight.bold)
           ),
-          shape: WidgetStatePropertyAll<RoundedRectangleBorder>(
+          shape: const WidgetStatePropertyAll<RoundedRectangleBorder>(
             RoundedRectangleBorder(
               borderRadius: BorderRadius.all(Radius.circular(8)),
             ),
@@ -69,10 +69,10 @@ class AppTheme {
       ),
       textButtonTheme: TextButtonThemeData(
         style: ButtonStyle(
-          foregroundColor: WidgetStatePropertyAll<Color>(AppColors.secondary),
+          foregroundColor: const WidgetStatePropertyAll<Color>(AppColors.secondary),
         ),
       ),
-      appBarTheme: AppBarTheme(
+      appBarTheme: const AppBarTheme(
         backgroundColor: AppColors.background,
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
@@ -83,7 +83,7 @@ class AppTheme {
           color: AppColors.textPrimary,
         )
       ),
-      cardTheme: CardTheme(
+      cardTheme: const CardTheme(
         elevation: 2,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.all(Radius.circular(12))
@@ -91,10 +91,10 @@ class AppTheme {
         color: AppColors.surfacePrimary,
         margin: EdgeInsets.symmetric(vertical: 6.0, horizontal: 4.0),
       ),
-      iconTheme: IconThemeData(
+      iconTheme: const IconThemeData(
         color: AppColors.textSecondary,
       ),
-      floatingActionButtonTheme: FloatingActionButtonThemeData(
+      floatingActionButtonTheme: const FloatingActionButtonThemeData(
         backgroundColor: AppColors.accent,
         foregroundColor: Colors.black,
         elevation: 4.0,
