@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:my_project/theme/app_colors.dart';
 
 /// Application theme configuration
 class AppTheme {
   /// Creates the default dark theme for the app
   static ThemeData get darkTheme {
-    return const ThemeData(
+    return ThemeData(
       brightness: Brightness.dark,
       colorScheme: ColorScheme.dark(
         primary: AppColors.primary,
