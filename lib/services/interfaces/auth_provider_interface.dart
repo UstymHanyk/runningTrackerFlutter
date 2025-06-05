@@ -9,6 +9,7 @@ abstract class AuthProviderInterface extends ChangeNotifier {
 
   Future<bool> register(String email, String password, String name);
   Future<bool> login(String email, String password);
+  Future<bool> loginWithStoredCredentials();
   Future<void> logout();
   Future<bool> updateUserProfile(String name);
 } 

@@ -1,71 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:provider/provider.dart';
-import 'package:my_project/services/mqtt_service.dart';
+import 'package:my_project/cubits/heart_rate_cubit.dart';
 import 'package:my_project/services/connectivity_service.dart';
+import 'package:my_project/widgets/heart_rate/connectivity_status_banner.dart';
+import 'package:my_project/widgets/heart_rate/connection_status_card.dart';
+import 'package:my_project/widgets/heart_rate/heart_rate_display_card.dart';
+import 'package:my_project/widgets/heart_rate/action_buttons.dart';
 
-class HeartRateDashboardScreen extends StatefulWidget {
+class HeartRateDashboardScreen extends StatelessWidget {
   const HeartRateDashboardScreen({super.key});
 
   @override
-  State<HeartRateDashboardScreen> createState() => _HeartRateDashboardScreenState();
-}
-
-class _HeartRateDashboardScreenState extends State<HeartRateDashboardScreen> {
-  late MqttService _mqttService;
-  late ConnectivityService _connectivityService;
-
-  @override
-  void initState() {
-    super.initState();
-    _mqttService = MqttService();
-    _connectivityService = context.read<ConnectivityService>();
-    
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _initializeMqtt();
-    });
-  }
-
-  Future<void> _initializeMqtt() async {
-    if (_connectivityService.isConnected) {
-      await _mqttService.connect();
-    } else {
-      _showConnectivityDialog();
-    }
-  }
-
-  void _showConnectivityDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('No Internet Connection'),
-        content: const Text('Please check your internet connection and try again.'),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              if (_connectivityService.isConnected) {
-                _initializeMqtt();
-              }
-            },
-            child: const Text('Retry'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  @override
-  void dispose() {
-    _mqttService.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
+    // Initialize the cubit when the screen is built
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<HeartRateCubit>().initialize();
+    });
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Heart Rate Monitor'),
@@ -88,155 +40,42 @@ class _HeartRateDashboardScreenState extends State<HeartRateDashboardScreen> {
           return Column(
             children: [
               // Connectivity Status Banner
-              if (!connectivity.isConnected)
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(12),
-                  color: Colors.red.shade100,
-                  child: Row(
-                    children: [
-                      Icon(Icons.warning, color: Colors.red.shade700),
-                      const SizedBox(width: 8),
-                      Text(
-                        'No internet connection',
-                        style: TextStyle(
-                          color: Colors.red.shade700,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+              ConnectivityStatusBanner(isConnected: connectivity.isConnected),
               
               // Main Content
               Expanded(
-                child: ChangeNotifierProvider.value(
-                  value: _mqttService,
-                  child: Consumer<MqttService>(
-                    builder: (context, mqttService, child) {
-                      return Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Connection Status Card
-                            Card(
-                              child: Padding(
-                                padding: const EdgeInsets.all(16.0),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Connection Status',
-                                      style: Theme.of(context).textTheme.titleLarge,
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Row(
-                                      children: [
-                                        Icon(
-                                          mqttService.isConnected 
-                                              ? Icons.check_circle 
-                                              : Icons.error,
-                                          color: mqttService.isConnected 
-                                              ? Colors.green 
-                                              : Colors.red,
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Text(mqttService.connectionStatus),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      'Device Status: ${mqttService.deviceStatus}',
-                                      style: Theme.of(context).textTheme.bodyMedium,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                            
-                            const SizedBox(height: 16),
-                            
-                            // Heart Rate Display
-                            Card(
-                              child: Padding(
-                                padding: const EdgeInsets.all(24.0),
-                                child: Column(
-                                  children: [
-                                    Text(
-                                      'Heart Rate',
-                                      style: Theme.of(context).textTheme.headlineSmall,
-                                    ),
-                                    const SizedBox(height: 16),
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      crossAxisAlignment: CrossAxisAlignment.baseline,
-                                      textBaseline: TextBaseline.alphabetic,
-                                      children: [
-                                        Text(
-                                          mqttService.currentHeartRate.toInt().toString(),
-                                          style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                                            color: _getHeartRateColor(mqttService.currentHeartRate),
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Text(
-                                          'BPM',
-                                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                            color: Colors.grey,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 16),
-                                    Text(
-                                      _getHeartRateStatus(mqttService.currentHeartRate),
-                                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                        color: _getHeartRateColor(mqttService.currentHeartRate),
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                            
-                            const SizedBox(height: 16),
-                            
-                            // Action Buttons
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: ElevatedButton.icon(
-                                    onPressed: connectivity.isConnected && !mqttService.isConnected
-                                        ? () => _mqttService.connect()
-                                        : null,
-                                    icon: const Icon(Icons.refresh),
-                                    label: const Text('Reconnect'),
-                                  ),
-                                ),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: ElevatedButton.icon(
-                                    onPressed: mqttService.isConnected
-                                        ? () => _mqttService.disconnect()
-                                        : null,
-                                    icon: const Icon(Icons.stop),
-                                    label: const Text('Disconnect'),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.red,
-                                      foregroundColor: Colors.white,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
+                child: BlocConsumer<HeartRateCubit, HeartRateState>(
+                  listener: (context, state) {
+                    if (state is HeartRateNoConnection) {
+                      _showConnectivityDialog(context, connectivity);
+                    } else if (state is HeartRateError) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(state.message)),
                       );
-                    },
-                  ),
+                    }
+                  },
+                  builder: (context, state) {
+                    return Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Connection Status Card
+                          _buildConnectionStatusCard(state),
+                          
+                          const SizedBox(height: 16),
+                          
+                          // Heart Rate Display
+                          _buildHeartRateCard(state),
+                          
+                          const SizedBox(height: 16),
+                          
+                          // Action Buttons
+                          _buildActionButtons(state, connectivity.isConnected),
+                        ],
+                      ),
+                    );
+                  },
                 ),
               ),
             ],
@@ -246,19 +85,81 @@ class _HeartRateDashboardScreenState extends State<HeartRateDashboardScreen> {
     );
   }
 
-  Color _getHeartRateColor(double heartRate) {
-    if (heartRate == 0) return Colors.grey;
-    if (heartRate < 60) return Colors.blue;
-    if (heartRate <= 100) return Colors.green;
-    if (heartRate <= 150) return Colors.orange;
-    return Colors.red;
+  Widget _buildConnectionStatusCard(HeartRateState state) {
+    if (state is HeartRateConnected) {
+      return ConnectionStatusCard(
+        isConnected: true,
+        connectionStatus: state.connectionStatus,
+        deviceStatus: state.deviceStatus,
+      );
+    } else if (state is HeartRateDisconnected) {
+      return ConnectionStatusCard(
+        isConnected: false,
+        connectionStatus: state.reason,
+        deviceStatus: 'Disconnected',
+      );
+    } else if (state is HeartRateConnecting) {
+      return const ConnectionStatusCard(
+        isConnected: false,
+        connectionStatus: 'Connecting...',
+        deviceStatus: 'Connecting',
+      );
+    } else if (state is HeartRateError) {
+      return ConnectionStatusCard(
+        isConnected: false,
+        connectionStatus: state.message,
+        deviceStatus: 'Error',
+      );
+    } else {
+      return const ConnectionStatusCard(
+        isConnected: false,
+        connectionStatus: 'Not connected',
+        deviceStatus: 'Idle',
+      );
+    }
   }
 
-  String _getHeartRateStatus(double heartRate) {
-    if (heartRate == 0) return 'No data';
-    if (heartRate < 60) return 'Low';
-    if (heartRate <= 100) return 'Normal';
-    if (heartRate <= 150) return 'Elevated';
-    return 'High';
+  Widget _buildHeartRateCard(HeartRateState state) {
+    double heartRate = 0.0;
+    
+    if (state is HeartRateConnected) {
+      heartRate = state.currentHeartRate;
+    }
+    
+    return HeartRateDisplayCard(heartRate: heartRate);
+  }
+
+  Widget _buildActionButtons(HeartRateState state, bool hasConnectivity) {
+    bool isConnected = state is HeartRateConnected;
+    
+    return ActionButtons(
+      isConnected: isConnected,
+      hasConnectivity: hasConnectivity,
+    );
+  }
+
+  void _showConnectivityDialog(BuildContext context, ConnectivityService connectivity) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('No Internet Connection'),
+        content: const Text('Please check your internet connection and try again.'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              if (connectivity.isConnected) {
+                context.read<HeartRateCubit>().connect();
+              }
+            },
+            child: const Text('Retry'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+        ],
+      ),
+    );
   }
 } 

@@ -1,0 +1,9 @@
+This directory is reserved for application images.
+
+Required image assets:
+- App icons
+- Placeholder images
+- UI elements
+- etc.
+
+Please add image files in PNG, JPG, or SVG format. 

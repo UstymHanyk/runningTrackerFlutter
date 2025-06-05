@@ -160,6 +160,7 @@ class AuthProvider extends ChangeNotifier implements AuthProviderInterface {
     }
   }
 
+  @override
   Future<bool> loginWithStoredCredentials() async {
     _isLoading = true;
     _error = null;
