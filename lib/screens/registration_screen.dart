@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:my_project/navigation/app_routes.dart';
+import 'package:my_project/services/interfaces/auth_provider_interface.dart';
 import 'package:my_project/widgets/custom_text_field.dart';
+import 'package:provider/provider.dart';
 
 class RegistrationScreen extends StatefulWidget {
   const RegistrationScreen({super.key});
@@ -13,6 +15,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   final _formKey = GlobalKey<FormState>();
   final _passwordController = TextEditingController();
   final _emailController = TextEditingController();
+  final _nameController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
 
  @override
@@ -20,6 +23,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     _passwordController.dispose();
     _emailController.dispose();
     _confirmPasswordController.dispose();
+    _nameController.dispose();
     super.dispose();
   }
 
@@ -27,6 +31,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   Widget build(BuildContext context) {
     final EdgeInsets edgeInsets = MediaQuery.of(context).viewPadding;
     final double horizontalPadding = MediaQuery.of(context).size.width * 0.1;
+    final authProvider = Provider.of<AuthProviderInterface>(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -53,6 +58,21 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                   style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 40),
+                CustomTextField(
+                  controller: _nameController,
+                  labelText: 'Name',
+                  prefixIconData: Icons.person,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter your name';
+                    }
+                    if (RegExp(r'[0-9]').hasMatch(value)) {
+                      return 'Name should not contain numbers';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 20),
                 CustomTextField(
                   controller: _emailController,
                   labelText: 'Email',
@@ -100,21 +120,44 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 40),
+                const SizedBox(height: 10),
+                if (authProvider.error != null)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: Text(
+                      authProvider.error!,
+                      style: TextStyle(color: Theme.of(context).colorScheme.error),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                const SizedBox(height: 30),
                 ElevatedButton(
-                  onPressed: () {
-                    if (_formKey.currentState!.validate()) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Processing Data... (Registration Logic Placeholder)')),
-                        );
-                        Navigator.pushNamedAndRemoveUntil(
-                          context,
-                          AppRoutes.main,
-                          (Route<dynamic> route) => false,
-                        );
-                    }
-                  },
-                  child: const Text('Register'),
+                  onPressed: authProvider.isLoading 
+                      ? null 
+                      : () async {
+                          if (_formKey.currentState!.validate()) {
+                            final success = await authProvider.register(
+                              _emailController.text.trim(),
+                              _passwordController.text,
+                              _nameController.text.trim(),
+                            );
+                            
+                            if (context.mounted && success) {
+                              Navigator.pushNamedAndRemoveUntil(
+                                context,
+                                AppRoutes.main,
+                                (Route<dynamic> route) => false,
+                              );
+                            }
+                          }
+                        },
+                  child: authProvider.isLoading 
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text('Register'),
                 ),
                 const SizedBox(height: 20),
                 TextButton(
@@ -137,4 +180,4 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       ),
     );
   }
-} 
+}
