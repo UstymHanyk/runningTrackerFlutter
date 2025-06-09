@@ -3,64 +3,8 @@ import 'package:equatable/equatable.dart';
 import 'package:my_project/services/microcontroller_service.dart';
 import 'package:flutter/foundation.dart';
 
-// States
-abstract class MicrocontrollerState extends Equatable {
-  const MicrocontrollerState();
+part 'microcontroller_state.dart';
 
-  @override
-  List<Object?> get props => [];
-}
-
-class MicrocontrollerInitial extends MicrocontrollerState {}
-
-class MicrocontrollerLoading extends MicrocontrollerState {}
-
-class MicrocontrollerLoaded extends MicrocontrollerState {
-  final String? currentSerialNumber;
-  final String? storedUsername;
-  final bool hasStoredCredentials;
-  final bool isConfigured;
-
-  const MicrocontrollerLoaded({
-    this.currentSerialNumber,
-    this.storedUsername,
-    required this.hasStoredCredentials,
-    required this.isConfigured,
-  });
-
-  @override
-  List<Object?> get props => [
-        currentSerialNumber,
-        storedUsername,
-        hasStoredCredentials,
-        isConfigured,
-      ];
-
-  MicrocontrollerLoaded copyWith({
-    String? currentSerialNumber,
-    String? storedUsername,
-    bool? hasStoredCredentials,
-    bool? isConfigured,
-  }) {
-    return MicrocontrollerLoaded(
-      currentSerialNumber: currentSerialNumber ?? this.currentSerialNumber,
-      storedUsername: storedUsername ?? this.storedUsername,
-      hasStoredCredentials: hasStoredCredentials ?? this.hasStoredCredentials,
-      isConfigured: isConfigured ?? this.isConfigured,
-    );
-  }
-}
-
-class MicrocontrollerError extends MicrocontrollerState {
-  final String message;
-
-  const MicrocontrollerError(this.message);
-
-  @override
-  List<Object> get props => [message];
-}
-
-// Cubit
 class MicrocontrollerCubit extends Cubit<MicrocontrollerState> {
   final MicrocontrollerService _service;
 
@@ -87,7 +31,8 @@ class MicrocontrollerCubit extends Cubit<MicrocontrollerState> {
       await _service.fetchCurrentSerialNumber();
       _emitLoadedState();
     } catch (e) {
-      emit(MicrocontrollerError(_service.error ?? 'Failed to fetch serial number'));
+      final errorMessage = _service.error ?? 'Failed to fetch serial number';
+      emit(MicrocontrollerError(errorMessage));
     }
   }
 
@@ -98,7 +43,8 @@ class MicrocontrollerCubit extends Cubit<MicrocontrollerState> {
       if (success) {
         _emitLoadedState();
       } else {
-        emit(MicrocontrollerError(_service.error ?? 'Failed to update serial number'));
+        final errorMessage = _service.error ?? 'Failed to update serial number';
+        emit(MicrocontrollerError(errorMessage));
       }
     } catch (e) {
       emit(MicrocontrollerError('Failed to update serial number: $e'));
@@ -109,8 +55,9 @@ class MicrocontrollerCubit extends Cubit<MicrocontrollerState> {
     emit(MicrocontrollerLoading());
     try {
       await _service.saveCredentials(username, password);
-      if (_service.error != null) {
-        emit(MicrocontrollerError(_service.error!));
+      final serviceError = _service.error;
+      if (serviceError != null) {
+        emit(MicrocontrollerError(serviceError));
       } else {
         _emitLoadedState();
       }

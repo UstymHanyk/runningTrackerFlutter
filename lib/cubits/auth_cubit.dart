@@ -3,39 +3,8 @@ import 'package:equatable/equatable.dart';
 import 'package:my_project/services/interfaces/auth_provider_interface.dart';
 import 'package:flutter/foundation.dart';
 
-// States
-abstract class AuthState extends Equatable {
-  const AuthState();
+part 'auth_state.dart';
 
-  @override
-  List<Object?> get props => [];
-}
-
-class AuthInitial extends AuthState {}
-
-class AuthLoading extends AuthState {}
-
-class AuthSuccess extends AuthState {
-  final String message;
-
-  const AuthSuccess(this.message);
-
-  @override
-  List<Object> get props => [message];
-}
-
-class AuthError extends AuthState {
-  final String message;
-
-  const AuthError(this.message);
-
-  @override
-  List<Object> get props => [message];
-}
-
-class AuthAutoLoginCheck extends AuthState {}
-
-// Cubit
 class AuthCubit extends Cubit<AuthState> {
   final AuthProviderInterface _authProvider;
 
@@ -74,8 +43,9 @@ class AuthCubit extends Cubit<AuthState> {
         debugPrint('Login successful');
         emit(const AuthSuccess('Login successful'));
       } else {
-        debugPrint('Login failed: ${_authProvider.error}');
-        emit(AuthError(_authProvider.error ?? 'Login failed'));
+        final errorMessage = _authProvider.error ?? 'Login failed';
+        debugPrint('Login failed: $errorMessage');
+        emit(AuthError(errorMessage));
       }
     } catch (e) {
       emit(AuthError('Login error: $e'));
@@ -90,7 +60,8 @@ class AuthCubit extends Cubit<AuthState> {
       if (success) {
         emit(const AuthSuccess('Registration successful'));
       } else {
-        emit(AuthError(_authProvider.error ?? 'Registration failed'));
+        final errorMessage = _authProvider.error ?? 'Registration failed';
+        emit(AuthError(errorMessage));
       }
     } catch (e) {
       emit(AuthError('Registration error: $e'));
