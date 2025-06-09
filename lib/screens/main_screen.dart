@@ -22,7 +22,7 @@ class MainScreen extends StatelessWidget {
     });
 
     return Scaffold(
-      appBar: const MainAppBar(),
+
       body: Consumer3<RunProviderInterface, ConnectivityService, AuthProviderInterface>(
         builder: (context, runProvider, connectivityService, authProvider, child) {
           return BlocListener<MainScreenCubit, MainScreenState>(

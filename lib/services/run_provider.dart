@@ -51,6 +51,13 @@ class RunProvider extends ChangeNotifier implements RunProviderInterface {
     });
   }
 
+  @override
+  Future<void> updateMqttConfiguration() async {
+    if (_mqttService != null) {
+      await _mqttService!.updateConfiguration();
+    }
+  }
+
   void _onMqttDataUpdate() {
     if (_mqttService != null && _mqttService!.isConnected) {
       final newHeartRate = _mqttService!.currentHeartRate.toInt();
