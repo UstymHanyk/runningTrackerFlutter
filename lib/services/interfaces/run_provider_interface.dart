@@ -16,4 +16,5 @@ abstract class RunProviderInterface extends ChangeNotifier {
   Future<bool> saveRun(String name);
   Future<bool> deleteRun(String id);
   Future<bool> updateRun(Run updatedRun);
+  Future<void> updateMqttConfiguration();
 } 

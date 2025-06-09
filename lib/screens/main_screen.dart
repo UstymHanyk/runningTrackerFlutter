@@ -134,6 +134,26 @@ class _MainScreenState extends State<MainScreen> {
             },
           ),
           IconButton(
+            icon: const Icon(Icons.settings_input_antenna),
+            tooltip: 'Device Configuration',
+            onPressed: () {
+              Navigator.pushNamed(context, AppRoutes.microcontroller);
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.router),
+            tooltip: 'MQTT Broker Config',
+            onPressed: () async {
+              final runProvider = context.read<RunProviderInterface>();
+              final result = await Navigator.pushNamed(context, AppRoutes.mqttConfig);
+              // If configuration was saved, update any active MQTT services
+              if (result == true && mounted) {
+                await runProvider.updateMqttConfiguration();
+                debugPrint('MQTT configuration updated');
+              }
+            },
+          ),
+          IconButton(
             icon: const Icon(Icons.person),
             tooltip: 'Profile',
             onPressed: () {

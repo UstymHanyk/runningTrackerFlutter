@@ -25,6 +25,17 @@ class _HeartRateDashboardScreenState extends State<HeartRateDashboardScreen> {
     });
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Check if we need to update MQTT configuration when returning from other screens
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_mqttService.isConnected) {
+        _mqttService.updateConfiguration();
+      }
+    });
+  }
+
   Future<void> _initializeMqtt() async {
     if (_connectivityService.isConnected) {
       await _mqttService.connect();
@@ -80,7 +91,18 @@ class _HeartRateDashboardScreenState extends State<HeartRateDashboardScreen> {
               );
             },
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 8),
+          IconButton(
+            icon: const Icon(Icons.router),
+            tooltip: 'MQTT Broker Config',
+            onPressed: () async {
+              final result = await Navigator.pushNamed(context, '/mqtt_config');
+              if (result == true && mounted) {
+                // Update configuration if changes were saved
+                await _mqttService.updateConfiguration();
+              }
+            },
+          ),
         ],
       ),
       body: Consumer<ConnectivityService>(
