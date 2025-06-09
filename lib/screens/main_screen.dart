@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:my_project/navigation/app_routes.dart';
 import 'package:my_project/services/interfaces/auth_provider_interface.dart';
 import 'package:my_project/services/interfaces/run_provider_interface.dart';
+import 'package:my_project/services/connectivity_service.dart';
 import 'package:my_project/theme/app_colors.dart';
 import 'package:my_project/widgets/run_list_item.dart';
 import 'package:provider/provider.dart';
@@ -23,13 +24,22 @@ class _MainScreenState extends State<MainScreen> {
       _updateRunsForCurrentUser();
     });
   }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Also reload runs when dependencies change (like when returning from profile)
+    _updateRunsForCurrentUser();
+  }
   
   void _updateRunsForCurrentUser() {
     final authProvider = Provider.of<AuthProviderInterface>(context, listen: false);
     final runProvider = Provider.of<RunProviderInterface>(context, listen: false);
     
     // Check if user has changed and reload runs if needed
-    runProvider.checkUserAndReload(authProvider.currentUser?.email);
+    if (authProvider.currentUser?.email != null) {
+      runProvider.checkUserAndReload(authProvider.currentUser?.email);
+    }
   }
 
   @override
@@ -45,13 +55,84 @@ class _MainScreenState extends State<MainScreen> {
     FocusScope.of(context).unfocus();
   }
 
+  void _showLogoutDialog() {
+    // Capture the context that is valid for the initial dialog operations
+    final BuildContext dialogBuildContext = context;
+
+    showDialog(
+      context: dialogBuildContext, // Use the captured context for showDialog
+      builder: (BuildContext alertContext) => AlertDialog( // This is the context for the AlertDialog itself
+        title: const Text('Logout'),
+        content: const Text('Are you sure you want to logout?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(alertContext).pop(), // Use alertContext to pop the alert
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              // Capture the AuthProvider and the Navigator from the MainScreen's context (dialogBuildContext)
+              // before any async operations or dialog dismissal if they are needed after an async gap for logout.
+              // However, for immediate navigation, MainScreen's context (dialogBuildContext or this.context) is fine.
+              final AuthProviderInterface authProvider = dialogBuildContext.read<AuthProviderInterface>();
+              final NavigatorState navigator = Navigator.of(dialogBuildContext);
+
+              // Close the confirmation dialog first, using its own context (alertContext)
+              Navigator.of(alertContext).pop();
+              
+              debugPrint('🔄 Logout button pressed, starting immediate navigation...');
+              
+              // Navigate immediately using the captured navigator
+              navigator.pushNamedAndRemoveUntil(
+                AppRoutes.login,
+                (route) => false,
+              );
+              
+              debugPrint('✅ Navigation executed, now performing cleanup...');
+              
+              // Perform logout cleanup asynchronously after navigation
+              Future.delayed(Duration.zero, () async {
+                try {
+                  // Use the captured authProvider for the logout operation
+                  await authProvider.logout().timeout(
+                    const Duration(seconds: 3),
+                  );
+                  debugPrint('✅ Logout cleanup completed');
+                } catch (e) {
+                  debugPrint('❌ Logout cleanup error: $e');
+                }
+              });
+            },
+            child: const Text('Logout'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Running Tracker'),
+        title: const Text('IoT Running Tracker'),
         automaticallyImplyLeading: false,
         actions: [
+          Consumer<ConnectivityService>(
+            builder: (context, connectivity, child) {
+              return Icon(
+                connectivity.isConnected ? Icons.wifi : Icons.wifi_off,
+                color: connectivity.isConnected ? Colors.green : Colors.red,
+              );
+            },
+          ),
+          const SizedBox(width: 8),
+          IconButton(
+            icon: const Icon(Icons.monitor_heart),
+            tooltip: 'Heart Rate Monitor',
+            onPressed: () {
+              Navigator.pushNamed(context, AppRoutes.heartRateDashboard);
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.person),
             tooltip: 'Profile',
@@ -59,16 +140,69 @@ class _MainScreenState extends State<MainScreen> {
               Navigator.pushNamed(context, AppRoutes.profile);
             },
           ),
+          PopupMenuButton<String>(
+            onSelected: (value) {
+              if (value == 'logout') {
+                _showLogoutDialog();
+              }
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'logout',
+                child: Row(
+                  children: [
+                    Icon(Icons.logout),
+                    SizedBox(width: 8),
+                    Text('Logout'),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ],
       ),
-      body: Consumer<RunProviderInterface>(
-        builder: (context, runProvider, child) {
+      body: Consumer3<RunProviderInterface, ConnectivityService, AuthProviderInterface>(
+        builder: (context, runProvider, connectivityService, authProvider, child) {
+          // Trigger run reload when auth state changes
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (authProvider.currentUser?.email != null) {
+              runProvider.checkUserAndReload(authProvider.currentUser?.email);
+            }
+          });
+
           return Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
+                // Connectivity Status Banner
+                if (!connectivityService.isConnected)
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 16, top: 8),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.shade100,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.orange.shade300),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.warning, color: Colors.orange.shade700),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Limited functionality - No internet connection',
+                            style: TextStyle(
+                              color: Colors.orange.shade700,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                
                 const SizedBox(height: 20),
                 const Text(
                   'CURRENT RUN',

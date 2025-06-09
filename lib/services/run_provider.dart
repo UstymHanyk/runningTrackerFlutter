@@ -4,7 +4,7 @@ import 'package:my_project/models/run.dart';
 import 'package:my_project/repositories/interfaces/run_repository_interface.dart';
 import 'package:my_project/repositories/run_repository.dart';
 import 'package:my_project/services/interfaces/run_provider_interface.dart';
-import 'dart:math';
+import 'package:my_project/services/mqtt_service.dart';
 
 class RunProvider extends ChangeNotifier implements RunProviderInterface {
   final RunRepositoryInterface _runRepository = RunRepository();
@@ -14,11 +14,12 @@ class RunProvider extends ChangeNotifier implements RunProviderInterface {
   double _currentDistance = 0;
   String? _currentUserEmail;
 
-  // Heart rate simulation state
+  // MQTT Heart rate integration
   int? _currentHeartRate;
   final List<int> _currentRunHeartRateData = [];
-  Timer? _heartRateTimer;
-  final Random _random = Random(); // For heart rate generation
+  MqttService? _mqttService;
+  StreamSubscription? _mqttHeartRateSubscription;
+  Timer? _heartRateDataTimer;
 
   @override
   List<Run> get runs => List.unmodifiable(_runs);
@@ -33,33 +34,76 @@ class RunProvider extends ChangeNotifier implements RunProviderInterface {
   double get currentDistance => _currentDistance;
 
   @override
-  int? get currentHeartRate => _currentHeartRate; // Implemented getter
+  int? get currentHeartRate => _currentHeartRate;
 
   RunProvider() {
     loadRuns();
+    _initializeMqtt();
+  }
+
+  void _initializeMqtt() {
+    _mqttService = MqttService();
+    _mqttService!.addListener(_onMqttDataUpdate);
+    
+    // Try to connect to MQTT broker
+    _mqttService!.connect().catchError((error) {
+      debugPrint('Failed to connect to MQTT broker: $error');
+    });
+  }
+
+  void _onMqttDataUpdate() {
+    if (_mqttService != null && _mqttService!.isConnected) {
+      final newHeartRate = _mqttService!.currentHeartRate.toInt();
+      
+      // Only update if we have a valid heart rate and distance > 0
+      if (newHeartRate > 0 && _currentDistance > 0) {
+        _currentHeartRate = newHeartRate;
+        
+        // Add to current run data every time we get new data
+        _currentRunHeartRateData.add(_currentHeartRate!);
+        notifyListeners();
+        
+        debugPrint('Updated heart rate from MQTT: $_currentHeartRate bpm');
+      }
+    }
+  }
+
+  void _startHeartRateDataCollection() {
+    // Clear previous data when starting a new run
+    _currentRunHeartRateData.clear();
+    _currentHeartRate = null;
+    
+    // Start periodic data collection timer
+    _heartRateDataTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_mqttService != null && _mqttService!.isConnected && _currentDistance > 0) {
+        final heartRate = _mqttService!.currentHeartRate.toInt();
+        if (heartRate > 0) {
+          _currentHeartRate = heartRate;
+          _currentRunHeartRateData.add(heartRate);
+          notifyListeners();
+        }
+      } else if (_currentDistance <= 0) {
+        // Stop collecting if distance becomes 0
+        _stopHeartRateDataCollection();
+      }
+    });
+    
+    debugPrint('Started MQTT heart rate data collection');
+  }
+
+  void _stopHeartRateDataCollection() {
+    _heartRateDataTimer?.cancel();
+    _heartRateDataTimer = null;
+    debugPrint('Stopped heart rate data collection');
   }
 
   @override
   void dispose() {
-    _heartRateTimer?.cancel();
+    _heartRateDataTimer?.cancel();
+    _mqttHeartRateSubscription?.cancel();
+    _mqttService?.removeListener(_onMqttDataUpdate);
+    _mqttService?.dispose();
     super.dispose();
-  }
-
-  void _startHeartRateSimulation() {
-    _heartRateTimer?.cancel(); // Cancel any existing timer
-    _heartRateTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      // Simulate heart rate between 90 and 160 bpm
-      _currentHeartRate = 90 + _random.nextInt(71); 
-      _currentRunHeartRateData.add(_currentHeartRate!);
-      notifyListeners();
-    });
-  }
-
-  void _stopHeartRateSimulation() {
-    _heartRateTimer?.cancel();
-    _heartRateTimer = null;
-    // _currentHeartRate = null; // Keep last HR displayed until run explicitly reset/saved
-    notifyListeners(); // Notify if _currentHeartRate was changed to null
   }
 
   @override
@@ -70,7 +114,7 @@ class RunProvider extends ChangeNotifier implements RunProviderInterface {
     _currentUserEmail = newUserEmail;
 
     if (userChanged) {
-      resetCurrentDistance(); // Reset run state for new user
+      resetCurrentDistance();
       _runs = [];
       notifyListeners();
       await loadRuns();
@@ -102,13 +146,15 @@ class RunProvider extends ChangeNotifier implements RunProviderInterface {
 
   @override
   void updateCurrentDistance(double distance) {
+    bool wasZero = _currentDistance == 0;
     _currentDistance = distance;
-    if (_currentDistance > 0 && (_heartRateTimer == null || !_heartRateTimer!.isActive)) {
-      _currentRunHeartRateData.clear(); // Clear old data for a new segment if any
-      _startHeartRateSimulation();
+    
+    if (_currentDistance > 0 && wasZero) {
+      // Starting a new run - begin heart rate data collection
+      _startHeartRateDataCollection();
     } else if (_currentDistance <= 0) {
-      _stopHeartRateSimulation();
-      _currentRunHeartRateData.clear();
+      // Stopping run - stop heart rate data collection
+      _stopHeartRateDataCollection();
       _currentHeartRate = null;
     }
     notifyListeners();
@@ -120,12 +166,11 @@ class RunProvider extends ChangeNotifier implements RunProviderInterface {
     _currentDistance = ((_currentDistance * 10) + (value * 10)) / 10;
     
     if (wasPreviouslyZero && _currentDistance > 0) {
-       _currentRunHeartRateData.clear(); // Start fresh HR data
-       _currentHeartRate = null; // Reset display for new run
-      _startHeartRateSimulation();
-    } else if (_currentDistance > 0 && (_heartRateTimer == null || !_heartRateTimer!.isActive)) {
-      // If somehow timer stopped but distance > 0, restart it.
-      _startHeartRateSimulation();
+      // Starting a new run segment
+      _startHeartRateDataCollection();
+    } else if (_currentDistance > 0 && _heartRateDataTimer == null) {
+      // Resume data collection if somehow stopped
+      _startHeartRateDataCollection();
     }
     notifyListeners();
   }
@@ -133,7 +178,7 @@ class RunProvider extends ChangeNotifier implements RunProviderInterface {
   @override
   void resetCurrentDistance() {
     _currentDistance = 0;
-    _stopHeartRateSimulation();
+    _stopHeartRateDataCollection();
     _currentRunHeartRateData.clear();
     _currentHeartRate = null;
     notifyListeners();
@@ -148,13 +193,15 @@ class RunProvider extends ChangeNotifier implements RunProviderInterface {
     }
     if (_isLoading) return false;
     
-    _stopHeartRateSimulation(); // Stop simulation before saving
+    // Stop heart rate data collection before saving
+    _stopHeartRateDataCollection();
 
     _isLoading = true;
     _error = null;
     notifyListeners();
     
-    List<int> heartDataForRun = List.from(_currentRunHeartRateData); // Copy data
+    // Copy heart rate data for this run
+    List<int> heartDataForRun = List.from(_currentRunHeartRateData);
 
     try {
       final run = Run(
@@ -162,13 +209,12 @@ class RunProvider extends ChangeNotifier implements RunProviderInterface {
         name: name.isNotEmpty ? name : 'Unnamed Run',
         distance: _currentDistance,
         date: DateTime.now(),
-        heartRateData: heartDataForRun, // Use accumulated data
+        heartRateData: heartDataForRun,
       );
       
       final result = await _runRepository.addRun(run: run, userEmail: _currentUserEmail);
       
       if (result) {
-        // The run object passed to addRun is what we want to add locally
         final runToAdd = run.copyWith(heartRateData: heartDataForRun); 
         final newRunsList = [runToAdd, ..._runs];
         newRunsList.sort((a,b) => b.date.compareTo(a.date));
@@ -178,10 +224,10 @@ class RunProvider extends ChangeNotifier implements RunProviderInterface {
         _currentDistance = 0;
         _currentRunHeartRateData.clear();
         _currentHeartRate = null; 
+        
+        debugPrint('Run saved with ${heartDataForRun.length} heart rate data points');
       } else {
         _error = 'Failed to save run';
-        // If save failed, potentially restart simulation if user wants to retry or continue run
-        // For now, we keep it stopped. User might need to manually start a new action.
       }
       
       return result;
@@ -206,7 +252,7 @@ class RunProvider extends ChangeNotifier implements RunProviderInterface {
       final result = await _runRepository.deleteRun(id: id, userEmail: _currentUserEmail);
       
       if (result) {
-        _runs = _runs.where((run) => run.id != id).toList();
+        _runs.removeWhere((run) => run.id == id);
       } else {
         _error = 'Failed to delete run';
       }
@@ -255,6 +301,10 @@ class RunProvider extends ChangeNotifier implements RunProviderInterface {
   }
 
   String _generateId() {
-    return '${DateTime.now().millisecondsSinceEpoch}_${_random.nextInt(10000)}';
+    return DateTime.now().millisecondsSinceEpoch.toString();
   }
+
+  // Getter for MQTT connection status
+  bool get isMqttConnected => _mqttService?.isConnected ?? false;
+  String get mqttConnectionStatus => _mqttService?.connectionStatus ?? 'Disconnected';
 } 

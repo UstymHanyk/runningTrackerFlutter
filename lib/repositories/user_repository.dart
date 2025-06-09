@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:my_project/models/user.dart';
 import 'package:my_project/repositories/interfaces/user_repository_interface.dart';
+import 'package:flutter/foundation.dart';
 
 class UserRepository implements UserRepositoryInterface {
   static const String _usersKey = 'users';
@@ -58,14 +59,29 @@ class UserRepository implements UserRepositoryInterface {
   
   @override
   Future<bool> login(String email, String password) async {
+    debugPrint('UserRepository: Attempting login for email: $email');
+    
     final user = await getUserByEmail(email);
     
-    if (user == null || user.password != password) {
+    if (user == null) {
+      debugPrint('UserRepository: No user found with email: $email');
       return false;
     }
     
+    debugPrint('UserRepository: User found. Checking password...');
+    
+    if (user.password != password) {
+      debugPrint('UserRepository: Password mismatch');
+      return false;
+    }
+    
+    debugPrint('UserRepository: Password correct. Setting current user...');
+    
     final prefs = await SharedPreferences.getInstance();
-    return prefs.setString(_currentUserKey, email);
+    final result = await prefs.setString(_currentUserKey, email);
+    
+    debugPrint('UserRepository: Login result: $result');
+    return result;
   }
   
   @override
