@@ -2,10 +2,9 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
+import 'package:my_project/services/config_service.dart';
 
 class MqttService extends ChangeNotifier {
-  static const String _brokerUrl = 'broker.hivemq.com';
-  static const int _brokerPort = 1883;
   static const String _heartRateTopic = 'esp8266/heartrate';
   static const String _statusTopic = 'esp8266/status';
   
@@ -14,15 +13,21 @@ class MqttService extends ChangeNotifier {
   String _connectionStatus = 'Disconnected';
   double _currentHeartRate = 0.0;
   String _deviceStatus = 'Unknown';
+  String _brokerUrl = ConfigService.defaultBrokerUrl;
+  int _brokerPort = ConfigService.defaultBrokerPort;
   
   // Getters
   bool get isConnected => _isConnected;
   String get connectionStatus => _connectionStatus;
   double get currentHeartRate => _currentHeartRate;
   String get deviceStatus => _deviceStatus;
+  String get brokerUrl => _brokerUrl;
+  int get brokerPort => _brokerPort;
 
   Future<void> connect() async {
     try {
+      await _loadConfiguration();
+      
       final clientId = 'flutter_client_${DateTime.now().millisecondsSinceEpoch}';
       _client = MqttServerClient(_brokerUrl, clientId);
       
@@ -120,6 +125,28 @@ class MqttService extends ChangeNotifier {
       _client!.publishMessage(topic, MqttQos.atMostOnce, builder.payload!);
       debugPrint('Published message to $topic: $message');
     }
+  }
+
+  Future<void> _loadConfiguration() async {
+    _brokerUrl = await ConfigService.getBrokerUrl();
+    _brokerPort = await ConfigService.getBrokerPort();
+  }
+
+  Future<void> updateConfiguration() async {
+    final wasConnected = _isConnected;
+    
+    if (wasConnected) {
+      disconnect();
+    }
+    
+    await _loadConfiguration();
+    
+    if (wasConnected) {
+      // Reconnect with new configuration
+      await connect();
+    }
+    
+    notifyListeners();
   }
 
   void disconnect() {
