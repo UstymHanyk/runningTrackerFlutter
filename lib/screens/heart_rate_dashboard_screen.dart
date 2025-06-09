@@ -18,6 +18,52 @@ class HeartRateDashboardScreen extends StatelessWidget {
       context.read<HeartRateCubit>().initialize();
     });
 
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Check if we need to update MQTT configuration when returning from other screens
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_mqttService.isConnected) {
+        _mqttService.updateConfiguration();
+      }
+    });
+  }
+
+  Future<void> _initializeMqtt() async {
+    if (_connectivityService.isConnected) {
+      await _mqttService.connect();
+    } else {
+      _showConnectivityDialog();
+    }
+  }
+
+  void _showConnectivityDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('No Internet Connection'),
+        content: const Text('Please check your internet connection and try again.'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              if (_connectivityService.isConnected) {
+                _initializeMqtt();
+              }
+            },
+            child: const Text('Retry'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+        ],
+      ),
+    );
+  }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Heart Rate Monitor'),
@@ -32,7 +78,18 @@ class HeartRateDashboardScreen extends StatelessWidget {
               );
             },
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 8),
+          IconButton(
+            icon: const Icon(Icons.router),
+            tooltip: 'MQTT Broker Config',
+            onPressed: () async {
+              final result = await Navigator.pushNamed(context, '/mqtt_config');
+              if (result == true && mounted) {
+                // Update configuration if changes were saved
+                await _mqttService.updateConfiguration();
+              }
+            },
+          ),
         ],
       ),
       body: Consumer<ConnectivityService>(
