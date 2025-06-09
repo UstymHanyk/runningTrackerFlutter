@@ -3,56 +3,8 @@ import 'package:equatable/equatable.dart';
 import 'package:my_project/services/interfaces/auth_provider_interface.dart';
 import 'package:my_project/services/interfaces/run_provider_interface.dart';
 
-// States
-abstract class MainScreenState extends Equatable {
-  const MainScreenState();
+part 'main_screen_state.dart';
 
-  @override
-  List<Object?> get props => [];
-}
-
-class MainScreenInitial extends MainScreenState {}
-
-class MainScreenLoaded extends MainScreenState {
-  final String runName;
-
-  const MainScreenLoaded({required this.runName});
-
-  @override
-  List<Object> get props => [runName];
-
-  MainScreenLoaded copyWith({String? runName}) {
-    return MainScreenLoaded(
-      runName: runName ?? this.runName,
-    );
-  }
-}
-
-class MainScreenSavingRun extends MainScreenState {}
-
-class MainScreenRunSaved extends MainScreenState {
-  final String message;
-
-  const MainScreenRunSaved(this.message);
-
-  @override
-  List<Object> get props => [message];
-}
-
-class MainScreenLoggingOut extends MainScreenState {}
-
-class MainScreenLogoutSuccess extends MainScreenState {}
-
-class MainScreenError extends MainScreenState {
-  final String message;
-
-  const MainScreenError(this.message);
-
-  @override
-  List<Object> get props => [message];
-}
-
-// Cubit
 class MainScreenCubit extends Cubit<MainScreenState> {
   final AuthProviderInterface _authProvider;
   final RunProviderInterface _runProvider;
@@ -65,8 +17,9 @@ class MainScreenCubit extends Cubit<MainScreenState> {
   }
 
   void _updateRunsForCurrentUser() {
-    if (_authProvider.currentUser?.email != null) {
-      _runProvider.checkUserAndReload(_authProvider.currentUser?.email);
+    final userEmail = _authProvider.currentUser?.email;
+    if (userEmail != null) {
+      _runProvider.checkUserAndReload(userEmail);
     }
   }
 

@@ -2,46 +2,8 @@ import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:my_project/models/run.dart';
 
-// States
-abstract class RunState extends Equatable {
-  const RunState();
+part 'run_state.dart';
 
-  @override
-  List<Object?> get props => [];
-}
-
-class RunInitial extends RunState {}
-
-class RunEditing extends RunState {
-  final String currentName;
-
-  const RunEditing(this.currentName);
-
-  @override
-  List<Object> get props => [currentName];
-}
-
-class RunSaving extends RunState {}
-
-class RunLoaded extends RunState {
-  final Run run;
-
-  const RunLoaded(this.run);
-
-  @override
-  List<Object> get props => [run];
-}
-
-class RunError extends RunState {
-  final String message;
-
-  const RunError(this.message);
-
-  @override
-  List<Object> get props => [message];
-}
-
-// Cubit
 class RunCubit extends Cubit<RunState> {
   final Run _originalRun;
   

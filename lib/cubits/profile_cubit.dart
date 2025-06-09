@@ -3,66 +3,8 @@ import 'package:equatable/equatable.dart';
 import 'package:my_project/services/interfaces/auth_provider_interface.dart';
 import 'package:my_project/services/interfaces/run_provider_interface.dart';
 
-// States
-abstract class ProfileState extends Equatable {
-  const ProfileState();
+part 'profile_state.dart';
 
-  @override
-  List<Object?> get props => [];
-}
-
-class ProfileInitial extends ProfileState {}
-
-class ProfileLoading extends ProfileState {}
-
-class ProfileLoaded extends ProfileState {
-  final bool isEditing;
-  final String name;
-  final String email;
-
-  const ProfileLoaded({
-    required this.isEditing,
-    required this.name,
-    required this.email,
-  });
-
-  @override
-  List<Object> get props => [isEditing, name, email];
-
-  ProfileLoaded copyWith({
-    bool? isEditing,
-    String? name,
-    String? email,
-  }) {
-    return ProfileLoaded(
-      isEditing: isEditing ?? this.isEditing,
-      name: name ?? this.name,
-      email: email ?? this.email,
-    );
-  }
-}
-
-class ProfileUpdating extends ProfileState {}
-
-class ProfileUpdateSuccess extends ProfileState {
-  final String message;
-
-  const ProfileUpdateSuccess(this.message);
-
-  @override
-  List<Object> get props => [message];
-}
-
-class ProfileError extends ProfileState {
-  final String message;
-
-  const ProfileError(this.message);
-
-  @override
-  List<Object> get props => [message];
-}
-
-// Cubit
 class ProfileCubit extends Cubit<ProfileState> {
   final AuthProviderInterface _authProvider;
   final RunProviderInterface _runProvider;
@@ -70,18 +12,19 @@ class ProfileCubit extends Cubit<ProfileState> {
   ProfileCubit(this._authProvider, this._runProvider) : super(ProfileInitial());
 
   void initialize() {
-    if (_authProvider.currentUser == null) {
+    final currentUser = _authProvider.currentUser;
+    if (currentUser == null) {
       emit(const ProfileError('Not logged in'));
       return;
     }
 
     // Update run provider for current user
-    _runProvider.checkUserAndReload(_authProvider.currentUser?.email);
+    _runProvider.checkUserAndReload(currentUser.email);
 
     emit(ProfileLoaded(
       isEditing: false,
-      name: _authProvider.currentUser!.name,
-      email: _authProvider.currentUser!.email,
+      name: currentUser.name,
+      email: currentUser.email,
     ));
   }
 
@@ -105,25 +48,32 @@ class ProfileCubit extends Cubit<ProfileState> {
       final success = await _authProvider.updateUserProfile(newName);
       
       if (success) {
-        emit(ProfileLoaded(
-          isEditing: false,
-          name: _authProvider.currentUser!.name,
-          email: _authProvider.currentUser!.email,
-        ));
-        emit(const ProfileUpdateSuccess('Profile updated successfully'));
-        
-        // After showing success, return to loaded state
-        Future.delayed(const Duration(seconds: 2), () {
-          if (_authProvider.currentUser != null) {
-            emit(ProfileLoaded(
-              isEditing: false,
-              name: _authProvider.currentUser!.name,
-              email: _authProvider.currentUser!.email,
-            ));
-          }
-        });
+        final currentUser = _authProvider.currentUser;
+        if (currentUser != null) {
+          emit(ProfileLoaded(
+            isEditing: false,
+            name: currentUser.name,
+            email: currentUser.email,
+          ));
+          emit(const ProfileUpdateSuccess('Profile updated successfully'));
+          
+          // After showing success, return to loaded state
+          Future.delayed(const Duration(seconds: 2), () {
+            final user = _authProvider.currentUser;
+            if (user != null) {
+              emit(ProfileLoaded(
+                isEditing: false,
+                name: user.name,
+                email: user.email,
+              ));
+            }
+          });
+        } else {
+          emit(const ProfileError('User session lost'));
+        }
       } else {
-        emit(ProfileError(_authProvider.error ?? 'Failed to update profile'));
+        final errorMessage = _authProvider.error ?? 'Failed to update profile';
+        emit(ProfileError(errorMessage));
       }
     } catch (e) {
       emit(ProfileError('Update error: $e'));
